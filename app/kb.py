@@ -6,8 +6,9 @@ from langchain_core.runnables.base import Output, Iterator, Union
 
 
 class PubManager:
-    def __init__(self):
-        self.llm: ChatOllama = ChatOllama(model="phi3:small")
+    def __init__(self, llm_name: str = "phi3:medium", is_stream: bool = False):
+        self.is_stream: bool = is_stream
+        self.llm: ChatOllama = ChatOllama(model=llm_name)
         self.system_prompt: ChatPromptTemplate = ChatPromptTemplate.from_messages(
             [
                 (
@@ -30,14 +31,14 @@ class PubManager:
 
     def _create_knowledge_base(self):
         # TODO: Ingest all PDFs and construct vectorstore
-        context_runnable = {"context": None}
+        context_runnable = {"context": RunnablePassthrough()}
         question_runnable = {"question": RunnablePassthrough()}
 
         self.chain = context_runnable | question_runnable | self.system_prompt | self.llm | StrOutputParser()
 
-    def answer(self, question: str, is_stream: bool = True) -> Union[Output, Iterator[Output]]:
+    def answer(self, question: str) -> Union[Output, Iterator[Output]]:
         question_dict = {"question": question}
-        if is_stream:
+        if self.is_stream:
             return self.chain.stream(question_dict)
         else:
             return self.chain.invoke(question_dict)

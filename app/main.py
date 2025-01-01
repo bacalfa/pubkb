@@ -25,11 +25,10 @@ def main():
         st.chat_message("user").write(prompt)
         if st.session_state["pm"].is_stream:
             response = st.write_stream(st.session_state["pm"].answer(prompt))
-            st.session_state.messages.append({"role": "assistant", "content": response})
         else:
             response = st.session_state["pm"].answer(prompt)
-            st.session_state.messages.append({"role": "assistant", "content": response})
             st.write(response)
+        st.session_state.messages.append({"role": "assistant", "content": response})
 
 
 if __name__ == "__main__":

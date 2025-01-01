@@ -18,6 +18,9 @@ services:
     build:
       context: . # Specifies the build context as the . directory
       dockerfile: Dockerfile_streamlit # Uses the Dockerfile in the build context
+      args:
+        - LLM_MODEL=phi3:medium
+        - EMBEDDING_MODEL=nomic-embed-text
     container_name: pubkb # Sets the container name to pubkb
     ports:
       - "8501:8501" # Maps port 8501 on the host to port 8501 in the container

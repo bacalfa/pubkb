@@ -1,11 +1,21 @@
 services:
   ollama:
-    image: ollama/ollama # Specifies the Ollama image to use
+    #    image: ollama/ollama # Specifies the Ollama image to use
+    build:
+      context: . # Specifies the build context as the . directory
+      dockerfile: Dockerfile_ollama # Uses the Dockerfile in the build context
+      args:
+        - LLM_MODEL=${LLM_MODEL}
+        - EMBEDDING_MODEL=${EMBEDDING_MODEL}
+    env_file:
+      - .env
     container_name: ollama # Sets the container name to ollama
     ports:
       - "11434:11434" # Maps port 11434 on the host to port 11434 in the container
     environment:
       - GIN_MODE=release
+    networks:
+      - pubkb-network
 #    deploy:
 #      resources:
 #        reservations:
@@ -19,12 +29,29 @@ services:
       context: . # Specifies the build context as the . directory
       dockerfile: Dockerfile_streamlit # Uses the Dockerfile in the build context
       args:
-        - LLM_MODEL=phi3:medium
-        - EMBEDDING_MODEL=nomic-embed-text
+        - LLM_MODEL=${LLM_MODEL}
+        - EMBEDDING_MODEL=${EMBEDDING_MODEL}
+    env_file:
+      - .env
     container_name: pubkb # Sets the container name to pubkb
     ports:
       - "8501:8501" # Maps port 8501 on the host to port 8501 in the container
     depends_on:
       - ollama # Ensures the ollama service is started before pubkb
+      - chromadb # Ensures the chroma service is started before pubkb
     stdin_open: true # docker run -i
     tty: true        # docker run -t
+    networks:
+      - pubkb-network
+
+  chromadb:
+    image: chromadb/chroma
+    container_name: chromadb # Sets the container name to chromadb
+    ports:
+      - "8000:8000"
+    networks:
+      - pubkb-network
+
+networks:
+  pubkb-network:
+    driver: bridge

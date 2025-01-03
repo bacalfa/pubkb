@@ -1,0 +1,15 @@
+# Use the Miniconda image
+FROM ollama/ollama
+
+# Copy the entry point script into the image
+COPY utils/ollama_entrypoint.sh /ollama_entrypoint.sh
+COPY .env /.env
+
+# Grant execution permissions
+RUN chmod +x /ollama_entrypoint.sh
+
+# Expose the necessary port
+EXPOSE 11434
+
+# Set the entry point to the script
+ENTRYPOINT ["/bin/bash", "/ollama_entrypoint.sh"]

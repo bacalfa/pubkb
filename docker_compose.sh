@@ -1,5 +1,8 @@
-docker compose -f compose.yaml up --build
+export LLM_MODEL=phi3:medium
+echo "LLM_MODEL=${LLM_MODEL}" > .env
+export EMBEDDING_MODEL=nomic-embed-text
+echo "EMBEDDING_MODEL=${EMBEDDING_MODEL}" >> .env
+export BASE_URL=http://ollama:11434
+echo "BASE_URL=${BASE_URL}" >> .env
 
-# Download models to ollama service
-bash utils/download_llm.sh ${LLM_MODEL}  # LLM
-bash utils/download_llm.sh ${EMBEDDING_MODEL}  # Embedding
+docker compose -f compose.yaml up --build

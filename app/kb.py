@@ -7,12 +7,13 @@ from langchain_core.runnables.base import Output, Iterator, Union
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import filter_complex_metadata
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 import os
 import glob
 
 llm_model_name = os.environ.get("LLM_MODEL", "phi3:medium")
 embedding_model_name = os.environ.get("EMBEDDING_MODEL", "nomic-embed-text")
+base_url = os.environ.get("BASE_URL", "http://ollama:11434")
 
 
 class PubManager:
@@ -32,7 +33,7 @@ class PubManager:
                     as additional context to help you answer any questions related to his published work. Only use 
                     information from the given context to generate your answers about Bruno's work. You may use your 
                     general knowledge of technical terms to explain their meaning if asked by the user. Only cite 
-                    sources available in the context.
+                    sources available in the context. Be succinct unless explicitly asked to expand on your answer.
                     Context: {context}
                     User question: {question}
                     Answer: 
@@ -57,8 +58,19 @@ class PubManager:
             all_chunks.extend(chunks)
 
         # Instantiate embedder and vector store
-        embedder = OllamaEmbeddings(model=embedding_model_name)
+        embedder = OllamaEmbeddings(model=embedding_model_name, base_url=base_url)
         vecstore = Chroma.from_documents(all_chunks, embedding=embedder)
+        # client_settings = chromadb.config.Settings()
+        # client_settings.chroma_server_host = "chromadb"
+        # client_settings.chroma_server_http_port = 8000
+        # client_settings.chroma_server_grpc_port = 8000
+        # vecstore = Chroma(
+        #     collection_name="pubs",
+        #     embedding_function=embedder,
+        #     persist_directory="./chroma_db",
+        #     client_settings=client_settings
+        # )
+        vecstore.add_documents(all_chunks)
 
         # Define chain utilities
         long_reorder = RunnableLambda(
@@ -79,16 +91,15 @@ class PubManager:
         question_runnable = {"question": (lambda x: x)}
 
         self.chain = (
-                context_runnable |
                 question_runnable |
+                context_runnable |
                 self.system_prompt |
                 self.llm |
                 StrOutputParser()
         )
 
     def answer(self, question: str) -> Union[Output, Iterator[Output]]:
-        question_dict = {"question": question}
         if self.is_stream:
-            return self.chain.stream(question_dict)
+            return self.chain.stream(question)
         else:
-            return self.chain.invoke(question_dict)
+            return self.chain.invoke(question)

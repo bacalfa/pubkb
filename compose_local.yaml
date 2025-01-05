@@ -1,0 +1,24 @@
+services:
+  pubkb:
+    build:
+      context: . # Specifies the build context as the . directory
+      dockerfile: Dockerfile_streamlit # Uses the Dockerfile in the build context
+      args:
+        - LLM_MODEL=${LLM_MODEL}
+        - EMBEDDING_MODEL=${EMBEDDING_MODEL}
+    env_file:
+      - .env
+    container_name: pubkb # Sets the container name to pubkb
+    ports:
+      - "8501:8501" # Maps port 8501 on the host to port 8501 in the container
+      - "11434:11434" # Maps port 11434 on the host to port 11434 in the container
+    depends_on:
+      - redis # Ensures the redis service is started before pubkb
+    stdin_open: true # docker run -i
+    tty: true        # docker run -t
+
+  redis:
+    image: redis/redis-stack
+    container_name: redis # Sets the container name to redis
+    ports:
+      - "6379:6379"
